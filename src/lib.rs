@@ -55,13 +55,13 @@ where
     /// ```
     #[inline]
     pub fn lagrange(xs: &[T], ys: &[T]) -> Option<Self> {
-        let mut res = Polynomial::new(vec![Zero::zero()]);
-        for ((i, x), y) in (0..).zip(xs.iter()).zip(ys.iter()) {
-            let mut p: Polynomial<T> = Polynomial::new(vec![T::one()]);
+        let mut res = Self::new(vec![Zero::zero()]);
+        for ((i, x), y) in xs.iter().enumerate().zip(ys.iter()) {
+            let mut p = Self::new(vec![T::one()]);
             let mut denom = T::one();
-            for (j, x2) in (0..).zip(xs.iter()) {
+            for (j, x2) in xs.iter().enumerate() {
                 if i != j {
-                    p = p * &Polynomial::new(vec![-x2.clone(), T::one()]);
+                    p = p * &Self::new(vec![-x2.clone(), T::one()]);
                     let diff = x.clone() - x2.clone();
                     if diff.is_zero() {
                         return None;
@@ -70,7 +70,7 @@ where
                 }
             }
             let scalar = y.clone() / denom;
-            res = res + p * &Polynomial::<T>::new(vec![scalar]);
+            res = res + p * &Self::new(vec![scalar]);
         }
         Some(res)
     }
@@ -174,24 +174,22 @@ where
             let term = if i.is_zero() {
                 n.to_string()
             } else if i == 1 {
-                if (*n) == one {
+                if *n == one {
                     x.to_string()
-                } else if (*n) == -one.clone() {
+                } else if *n == -one.clone() {
                     format!("-{}", x)
                 } else {
                     format!("{}*{}", n.to_string(), x)
                 }
+            } else if *n == one {
+                format!("{}^{}", x, i)
+            } else if *n == -one.clone() {
+                format!("-{}^{}", x, i)
             } else {
-                if (*n) == one {
-                    format!("{}^{}", x, i)
-                } else if (*n) == -one.clone() {
-                    format!("-{}^{}", x, i)
-                } else {
-                    format!("{}*{}^{}", n.to_string(), x, i)
-                }
+                format!("{}*{}^{}", n.to_string(), x, i)
             };
 
-            if s.len() > 0 && (*n) > Zero::zero() {
+            if !s.is_empty() && *n > Zero::zero() {
                 s.push("+".to_string());
             }
             s.push(term);
@@ -202,14 +200,13 @@ where
 }
 
 impl<T> fmt::Display for Polynomial<T>
-    where
+where
     T: Zero + One + Eq + Neg<Output = T> + Ord + fmt::Display + Clone,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.pretty("X"))
     }
 }
-
 
 impl<'a, T> Neg for Polynomial<T>
 where
