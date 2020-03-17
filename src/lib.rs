@@ -201,6 +201,16 @@ where
     }
 }
 
+impl<T> fmt::Display for Polynomial<T>
+    where
+    T: Zero + One + Eq + Neg<Output = T> + Ord + fmt::Display + Clone,
+{
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.pretty("X"))
+    }
+}
+
+
 impl<'a, T> Neg for Polynomial<T>
 where
     T: Neg + Zero + Clone,
