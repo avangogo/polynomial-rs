@@ -11,9 +11,10 @@
 #![warn(unused_results)]
 
 extern crate num_traits;
+extern crate ndarray;
 
-use num_traits::{FromPrimitive, One, Zero};
-use std::ops::{Add, Div, Mul, Neg, Sub};
+use num_traits::{FromPrimitive, One, Zero, Num};
+use std::ops::{Add, Div, Mul, Neg, Sub, Rem};
 use std::{cmp, fmt};
 
 /// Polynomial expression
@@ -119,7 +120,7 @@ where
         }
 
         let ys: Vec<T> = xs.iter().map(|x| f(x.clone())).collect();
-        Polynomial::lagrange(&xs[0..], &ys[0..])
+        Polynomial::lagrange(&xs, &ys)
     }
 }
 
@@ -152,6 +153,73 @@ impl<T> Polynomial<T> {
         &self.data
     }
 }
+
+macro_rules! forward_from {
+    (fn $f:ident, $type:ty) => {
+        fn $f(n: $type) -> Option<Self> {
+            T::$f(n).map(|value| Polynomial::new(vec![value]))
+        }
+    }
+}
+
+impl<T> FromPrimitive for Polynomial<T>
+    where T: FromPrimitive + Zero,
+{
+    forward_from!(fn from_i64, i64);
+    forward_from!(fn from_u64, u64);
+    forward_from!(fn from_isize, isize);
+    forward_from!(fn from_i8, i8);
+    forward_from!(fn from_i16, i16);
+    forward_from!(fn from_i32, i32);
+    forward_from!(fn from_usize, usize);
+    forward_from!(fn from_u8, u8);
+    forward_from!(fn from_u16, u16);
+    forward_from!(fn from_u32, u32);
+    forward_from!(fn from_f32, f32);
+    forward_from!(fn from_f64, f64);
+}
+
+impl<T: 'static + Clone> ndarray::ScalarOperand for Polynomial<T> {}
+
+impl<T> Num for Polynomial<T> where T: Num + Clone {
+    type FromStrRadixErr = ();
+
+    fn from_str_radix(
+        _str: &str, 
+        _radix: u32
+    ) -> Result<Self, Self::FromStrRadixErr> {
+        unimplemented!()
+    }
+}
+
+impl<T> Div for Polynomial<T>
+    where T: Num + Clone,
+{
+    type Output = Self;
+
+    fn div(mut self, rhs: Self) -> Self::Output {
+        match rhs.data.as_slice() {
+            [c] => {
+                for x in &mut self.data {
+                    *x = x.clone() / c.clone()
+                };
+                self
+            },
+            _ => unimplemented!(),
+        }
+    }
+}
+
+impl<T> Rem for Polynomial<T>
+    where T: Num + Clone,
+{
+    type Output = Self;
+
+    fn rem(self, _rhs: Self) -> Self::Output {
+        unimplemented!()
+    }
+}
+
 
 impl<T> Polynomial<T>
 where
@@ -204,7 +272,7 @@ where
     T: Zero + One + Eq + Neg<Output = T> + Ord + fmt::Display + Clone,
 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.pretty("X"))
+        write!(f, "{}", self.pretty("x"))
     }
 }
 
